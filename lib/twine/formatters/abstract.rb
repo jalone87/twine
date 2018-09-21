@@ -4,6 +4,8 @@ module Twine
   module Formatters
     class Abstract
       SUPPORTS_PLURAL = false
+      LANGUAGE_CODE_WITH_OPTIONAL_REGION_CODE = "[a-z]{2}(?:-[A-Za-z]{2})?"
+
       attr_accessor :twine_file
       attr_accessor :options
 
@@ -39,7 +41,7 @@ module Twine
             definition.translations[lang] = value
           end
         elsif @options[:consume_all]
-          Twine::stderr.puts "Adding new definition '#{key}' to twine file."
+          Twine::stdout.puts "Adding new definition '#{key}' to twine file."
           current_section = @twine_file.sections.find { |s| s.name == 'Uncategorized' }
           unless current_section
             current_section = TwineSection.new('Uncategorized')
@@ -47,15 +49,15 @@ module Twine
           end
           current_definition = TwineDefinition.new(key)
           current_section.definitions << current_definition
-          
+
           if @options[:tags] && @options[:tags].length > 0
-            current_definition.tags = @options[:tags]            
+            current_definition.tags = @options[:tags]
           end
-          
+
           @twine_file.definitions_by_key[key] = current_definition
           @twine_file.definitions_by_key[key].translations[lang] = value
         else
-          Twine::stderr.puts "Warning: '#{key}' not found in twine file."
+          Twine::stdout.puts "WARNING: '#{key}' not found in twine file."
         end
         if !@twine_file.language_codes.include?(lang)
           @twine_file.add_language_code(lang)
@@ -64,10 +66,10 @@ module Twine
 
       def set_comment_for_key(key, comment)
         return unless @options[:consume_comments]
-        
+
         if @twine_file.definitions_by_key.include?(key)
           definition = @twine_file.definitions_by_key[key]
-          
+
           reference = @twine_file.definitions_by_key[definition.reference_key] if definition.reference_key
 
           if !reference or comment != reference.raw_comment
@@ -77,7 +79,12 @@ module Twine
       end
 
       def determine_language_given_path(path)
-        raise NotImplementedError.new("You must implement determine_language_given_path in your formatter class.")
+        only_language_and_region = /^#{LANGUAGE_CODE_WITH_OPTIONAL_REGION_CODE}$/i
+        basename = File.basename(path, File.extname(path))
+        return basename if basename =~ only_language_and_region
+        return basename if @twine_file.language_codes.include? basename
+
+        path.split(File::SEPARATOR).reverse.find { |segment| segment =~ only_language_and_region }
       end
 
       def output_path_for_language(lang)
