@@ -1,3 +1,22 @@
+## Disclaimer
+
+This is a fork of a fork [mapsme.me](https://github.com/mapsme/twine) of [Twine](https://github.com/scelis/twine/) which adds support of plurals for mobile platforms (ios & android) but appears not to be supported anymore (and it's pull request on main repo has been [refused](https://github.com/scelis/twine/issues/46)).
+
+> We've implemented this functionality in our fork here:
+> https://github.com/mapsme/twine
+> Usage:
+> 
+> ```
+> [placepage_summary_rating_description]
+>     en:one = Based on %d review
+>     en:other = Based on %d reviews
+>     ru:one = На основе %d отзыва
+>     ru:other = На основе %d отзывов
+>     ...
+> ```
+> Plural strings works only for `android` and `ios`(see separate formatter `apple-plural`).
+> Possible [plural modificators](https://developer.android.com/guide/topics/resources/string-resource#Plurals).
+
 # Twine
 
 [![Continuous Integration by CircleCI](https://circleci.com/gh/scelis/twine.svg?style=shield)](https://circleci.com/gh/scelis/twine)
