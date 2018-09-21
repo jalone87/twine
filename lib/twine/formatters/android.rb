@@ -49,7 +49,7 @@ module Twine
           end
         end
 
-        return
+        return super
       end
 
       def output_path_for_language(lang)
@@ -68,7 +68,7 @@ module Twine
 
       def read(io, lang)
         document = REXML::Document.new io, :compress_whitespace => %w{ string }
-
+        document.context[:attribute_quote] = :quote
         comment = nil
         document.root.children.each do |child|
           if child.is_a? REXML::Comment
@@ -79,7 +79,8 @@ module Twine
 
             key = child.attributes['name']
 
-            set_translation_for_key(key, lang, child.text)
+            content = child.children.map(&:to_s).join
+            set_translation_for_key(key, lang, content)
             set_comment_for_key(key, comment) if comment
 
             comment = nil

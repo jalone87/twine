@@ -5,6 +5,14 @@ Twine::Plugin.new # Initialize plugins first in Runner.
 
 module Twine
   class Runner
+    class NullOutput
+      def puts(message)
+      end
+      def string
+        ""
+      end
+    end
+
     def self.run(args)
       options = CLI.parse(args)
 
@@ -35,6 +43,9 @@ module Twine
     def initialize(options = {}, twine_file = TwineFile.new)
       @options = options
       @twine_file = twine_file
+      if @options[:quite]
+        Twine::stdout = NullOutput.new
+      end
     end
 
     def write_twine_data(path)
@@ -76,7 +87,7 @@ module Twine
       end
       
       unless formatter
-        raise Twine::Error.new "Could not determine format given the contents of #{@options[:output_path]}"
+        raise Twine::Error.new "Could not determine format given the contents of #{@options[:output_path]}. Try using `--format`."
       end
 
       file_name = @options[:file_name] || formatter.default_file_name
@@ -90,7 +101,7 @@ module Twine
 
           output = formatter.format_file(lang)
           unless output
-            Twine::stderr.puts "Skipping file at path #{file_path} since it would not contain any translations."
+            Twine::stdout.puts "Skipping file at path #{file_path} since it would not contain any translations."
             next
           end
 
@@ -112,7 +123,7 @@ module Twine
           file_path = File.join(output_path, file_name)
           output = formatter.format_file(lang)
           unless output
-            Twine::stderr.puts "Skipping file at path #{file_path} since it would not contain any translations."
+            Twine::stdout.puts "Skipping file at path #{file_path} since it would not contain any translations."
             next
           end
 
@@ -148,7 +159,7 @@ module Twine
 
               output = formatter.format_file(lang)
               unless output
-                Twine::stderr.puts "Skipping file #{file_name} since it would not contain any translations."
+                Twine::stdout.puts "Skipping file #{file_name} since it would not contain any translations."
                 next
               end
               
@@ -197,6 +208,7 @@ module Twine
         raise Twine::Error.new("File does not exist: #{@options[:input_path]}")
       end
 
+      error_encountered = false
       Dir.mktmpdir do |temp_dir|
         Zip::File.open(@options[:input_path]) do |zipfile|
           zipfile.each do |entry|
@@ -209,6 +221,7 @@ module Twine
               read_localization_file(real_path)
             rescue Twine::Error => e
               Twine::stderr.puts "#{e.message}"
+              error_encountered = true
             end
           end
         end
@@ -216,6 +229,10 @@ module Twine
 
       output_path = @options[:output_path] || @options[:twine_file]
       write_twine_data(output_path)
+
+      if error_encountered
+        raise Twine::Error.new("At least one file could not be consumed")
+      end
     end
 
     def validate_twine_file
@@ -277,11 +294,6 @@ module Twine
       end
     end
 
-    def determine_language_given_path(path)
-      code = File.basename(path, File.extname(path))
-      return code if @twine_file.language_codes.include? code
-    end
-
     def formatter_for_format(format)
       find_formatter { |f| f.format_name == format }
     end
@@ -291,7 +303,7 @@ module Twine
       if formatters.empty?
         return nil
       elsif formatters.size > 1
-        raise Twine::Error.new("Unable to determine format. Candidates are: #{formatters.map(&:format_name).join(', ')}. Please specify the format you want using '--format'")
+        raise Twine::Error.new("Unable to determine format. Candidates are: #{formatters.map(&:format_name).join(', ')}. Please specify the format you want using `--format`")
       end
       formatter = formatters.first
       formatter.twine_file = @twine_file
@@ -322,12 +334,12 @@ module Twine
       end
       
       unless formatter
-        raise Twine::Error.new "Unable to determine format of #{path}"
+        raise Twine::Error.new "Unable to determine format of #{path}. Try using `--format`."
       end      
 
-      lang = lang || determine_language_given_path(path) || formatter.determine_language_given_path(path)
+      lang = lang || formatter.determine_language_given_path(path)
       unless lang
-        raise Twine::Error.new "Unable to determine language for #{path}"
+        raise Twine::Error.new "Unable to determine language for #{path}. Try using `--lang`."
       end
 
       @twine_file.language_codes << lang unless @twine_file.language_codes.include? lang

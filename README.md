@@ -1,6 +1,6 @@
 # Twine
 
-[![Continuous Integration by CircleCI](https://circleci.com/gh/teespring/twine.svg?style=shield)](https://circleci.com/gh/teespring/twine)
+[![Continuous Integration by CircleCI](https://circleci.com/gh/scelis/twine.svg?style=shield)](https://circleci.com/gh/scelis/twine)
 
 Twine is a command line tool for managing your strings and their translations. These are all stored in a master text file and then Twine uses this file to import and export localization files in a variety of types, including iOS and Mac OS X `.strings` files, Android `.xml` files, gettext `.po` files, and [jquery-localize][jquerylocalize] `.json` files. This allows individuals and companies to easily share translations across multiple projects, as well as export localization files in any format the user wants.
 
@@ -150,7 +150,7 @@ This command validates that the Twine data file can be parsed, contains no dupli
 The easiest way to create your first Twine data file is to run the [`consume-all-localization-files`](#consume-all-localization-files) command. The one caveat is to first create a blank file to use as your starting point. Then, just point the `consume-all-localization-files` command at a directory in your project containing all of your localization files.
 
 	$ touch twine.txt
-	$ twine consume-all-localization-files twine.txt Resources/Locales --developer-language en --consume-all --consume-comments
+	$ twine consume-all-localization-files twine.txt Resources/Locales --developer-language en --consume-all --consume-comments --format apple/android/gettext/jquery/django/tizen/flash
 
 ## Twine and Your Build Process
 
@@ -174,7 +174,10 @@ Now, whenever you build your application, Xcode will automatically invoke Twine 
 
 ### Android Studio/Gradle
 
-Add the following task at the top level in app/build.gradle:
+#### Standard
+
+Add the following code to `app/build.gradle`:
+
 ```
 task generateLocalizations {
 	String script = 'if hash twine 2>/dev/null; then twine generate-localization-file twine.txt ./src/main/res/values/generated_strings.xml; fi'
@@ -183,10 +186,46 @@ task generateLocalizations {
 		args '-c', script
 	}
 }
+
+preBuild {
+	dependsOn generateLocalizations
+}
 ```
 
-Now every time you build your app the localization files are generated from the Twine file.
+#### Using [jruby](http://jruby.org)
 
+With this approach, developers do not need to manually install ruby, gem, or twine.
+
+Add the following code to `app/build.gradle`:
+
+```
+buildscript {
+	repositories { jcenter() }
+
+	dependencies {
+		/* NOTE: Set your prefered version of jruby here. */
+		classpath "com.github.jruby-gradle:jruby-gradle-plugin:1.5.0"
+	}
+}
+
+apply plugin: 'com.github.jruby-gradle.base'
+
+dependencies {
+	/* NOTE: Set your prefered version of twine here. */
+	jrubyExec 'rubygems:twine:1.0.3'
+}
+
+task generateLocalizations (type: JRubyExec) {
+	dependsOn jrubyPrepare
+	jrubyArgs '-S'
+	script "twine"
+	scriptArgs 'generate-localization-file', 'twine.txt', './src/main/res/values/generated_strings.xml'
+}
+
+preBuild {
+	dependsOn generateLocalizations
+}
+```
 
 ## User Interface
 
