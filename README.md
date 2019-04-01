@@ -1,3 +1,10 @@
+## Quickstart using Docker
+
+* run `docker build --tag twine .`
+* run `docker run twine [twine args]`
+* run `docker run -v HOST_FOLDER:/CONTAINER_FOLDER twine [twine args]` (to mount input/output files from host into container)
+
+
 ## Disclaimer
 
 This is a fork of a fork [mapsme.me](https://github.com/mapsme/twine) of [Twine](https://github.com/scelis/twine/) which adds support of plurals for mobile platforms (ios & android) but appears not to be supported anymore (and it's pull request on main repo has been [refused](https://github.com/scelis/twine/issues/46)).
@@ -5,7 +12,7 @@ This is a fork of a fork [mapsme.me](https://github.com/mapsme/twine) of [Twine]
 > We've implemented this functionality in our fork here:
 > https://github.com/mapsme/twine
 > Usage:
-> 
+>
 > ```
 > [placepage_summary_rating_description]
 >     en:one = Based on %d review
