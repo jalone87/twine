@@ -1,11 +1,13 @@
-FROM ruby:2.2-alpine
+FROM ruby:2.3-alpine
 
 RUN mkdir /app
 
 WORKDIR /app
 
-RUN gem install safe_yaml -v 1.0.4
+RUN gem install bundler
 
 COPY . ./
+
+RUN bundle install
 
 ENTRYPOINT ["./twine"]

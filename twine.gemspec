@@ -9,7 +9,6 @@ Gem::Specification.new do |s|
   s.homepage     = "https://github.com/mobiata/twine"
   s.email        = "twine@mobiata.com"
   s.authors      = [ "Sebastian Celis" ]
-  s.has_rdoc     = false
   s.license      = "BSD-3-Clause"
 
   s.files        = %w( Gemfile README.md LICENSE )
